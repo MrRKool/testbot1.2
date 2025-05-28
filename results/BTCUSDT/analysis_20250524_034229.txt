@@ -1,0 +1,13 @@
+Backtest Analysis Report for BTCUSDT
+Generated on: 2025-05-24 03:42:30
+
+Performance Metrics:
+Total Trades: 10356
+Win Rate: 35.35%
+Profit Factor: 1.09
+Total Return: -100.00%
+Max Drawdown: 100.00%
+Sharpe Ratio: 0.38
+Sortino Ratio: 0.79
+
+Trade Analysis:

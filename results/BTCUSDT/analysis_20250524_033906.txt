@@ -1,0 +1,19 @@
+Backtest Analysis Report for BTCUSDT
+Generated on: 2025-05-24 03:39:06
+
+Performance Metrics:
+Total Trades: 0
+Win Rate: 0.00%
+Profit Factor: 0.00
+Total Return: 0.00%
+Max Drawdown: 0.00%
+Sharpe Ratio: 0.00
+Sortino Ratio: 0.00
+
+Trade Analysis:
+Average Winning Trade: 0.07
+Average Losing Trade: -0.01
+Largest Win: 1.79
+Largest Loss: -0.64
+Max Consecutive Wins: 1
+Max Consecutive Losses: 77

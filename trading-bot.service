@@ -1,0 +1,17 @@
+[Unit]
+Description=Trading Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/trading-bot
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/root/trading-bot/venv/bin/python3 /root/trading-bot/main.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/root/trading-bot/logs/bot.log
+StandardError=append:/root/trading-bot/logs/bot.error.log
+
+[Install]
+WantedBy=multi-user.target 
