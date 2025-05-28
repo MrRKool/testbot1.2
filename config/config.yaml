@@ -354,7 +354,7 @@ performance:
 # Telegram
 telegram:
   enabled: true
-  token: ${TELEGRAM_TOKEN}
+  token: ${TELEGRAM_BOT_TOKEN}
   chat_id: ${TELEGRAM_CHAT_ID}
   max_retries: 3
   retry_delay: 5
@@ -388,6 +388,11 @@ cache:
 # Database
 database:
   url: "sqlite:///trading_bot.db"
+  host: ${DB_HOST}
+  port: ${DB_PORT}
+  name: ${DB_NAME}
+  user: ${DB_USER}
+  password: ${DB_PASSWORD}
   pool_size: 5
   max_overflow: 10
   echo: false
@@ -478,18 +483,6 @@ advanced:
     min_profit: 0.001
     max_slippage: 0.0005
     max_trade_size: 1.0
-
-api:
-  api_key: "knGLnPlSh1fBIMOMwL"
-  api_secret: "YyQrmTKJMtxJmWOWwSfRmDcQ5jYHI3qwLeox"
-  base_url: "https://api-testnet.bybit.com"
-  timeout: 10
-  max_retries: 3
-  retry_delay: 5
-  rate_limit:
-    calls_per_second: 2
-    calls_per_minute: 50
-    calls_per_hour: 1000
 
 # AI Configuration
 ai:
