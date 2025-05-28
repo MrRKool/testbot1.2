@@ -1,0 +1,131 @@
+# Trading Bot Configuration
+
+# Exchange settings
+exchange:
+  name: binance
+  api_key: your_api_key_here
+  api_secret: your_api_secret_here
+  testnet: false
+  rate_limit: 1200  # requests per minute
+
+# Trading parameters
+trading:
+  cycle_interval: 60  # seconds between trading cycles
+  max_open_trades: 3
+  symbols:
+    BTCUSDT:
+      min_volume: 1000000  # minimum 24h volume in USDT
+      max_spread: 0.002    # maximum allowed spread
+    ETHUSDT:
+      min_volume: 500000
+      max_spread: 0.003
+    BNBUSDT:
+      min_volume: 200000
+      max_spread: 0.004
+
+# Strategy parameters
+strategy:
+  indicators:
+    rsi:
+      period: 14
+      overbought: 70
+      oversold: 30
+    macd:
+      fast_period: 12
+      slow_period: 26
+      signal_period: 9
+    bollinger:
+      period: 20
+      std_dev: 2
+    volume:
+      ma_period: 20
+      threshold: 1.5
+
+# Risk management
+risk:
+  max_position_size: 0.1    # maximum position size as fraction of portfolio
+  max_daily_loss: 0.05      # maximum daily loss as fraction of portfolio
+  stop_loss: 0.02           # stop loss as fraction of entry price
+  take_profit: 0.04         # take profit as fraction of entry price
+  max_drawdown: 0.15        # maximum drawdown before stopping trading
+  trailing_stop: 0.01       # trailing stop as fraction of current price
+
+# AI settings
+ai:
+  market_regime:
+    lookback_period: 100
+    min_samples: 50
+    confidence_threshold: 0.7
+  sentiment:
+    indicators:
+      - rsi
+      - macd
+      - volume
+      - social_media
+    update_interval: 3600  # seconds
+  model:
+    type: lstm
+    layers: [64, 32, 16]
+    dropout: 0.2
+    learning_rate: 0.001
+    batch_size: 32
+    epochs: 100
+
+# Performance monitoring
+monitoring:
+  metrics:
+    update_interval: 300  # seconds
+    save_interval: 3600   # seconds
+  alerts:
+    telegram:
+      enabled: true
+      bot_token: your_bot_token_here
+      chat_id: your_chat_id_here
+    email:
+      enabled: false
+      smtp_server: smtp.gmail.com
+      smtp_port: 587
+      sender_email: your_email@gmail.com
+      sender_password: your_app_password_here
+      recipient_email: your_email@gmail.com
+
+# Database settings
+database:
+  path: data/trading.db
+  backup_interval: 86400  # seconds
+  max_backups: 7
+
+# Cache settings
+cache:
+  enabled: true
+  ttl: 300  # seconds
+  max_size: 1000  # items
+
+# Optimization settings
+optimization:
+  enabled: true
+  interval: 43200  # seconds (12 hours)
+  parameters:
+    - rsi.period
+    - macd.fast_period
+    - macd.slow_period
+    - bollinger.period
+    - bollinger.std_dev
+  method: bayesian
+  n_trials: 100
+
+# Backtesting settings
+backtest:
+  start_date: "2023-01-01"
+  end_date: "2023-12-31"
+  initial_capital: 10000
+  commission: 0.001
+  slippage: 0.001
+
+# Logging settings
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: logs/trading.log
+  max_size: 10485760  # 10MB
+  backup_count: 5 

@@ -1,0 +1,2 @@
+2025-04-01 06:15:36,861 - INFO - Bot is gestart en logging is geconfigureerd.
+2025-04-01 06:27:11,339 - INFO - Bot is gestart en logging is geconfigureerd.

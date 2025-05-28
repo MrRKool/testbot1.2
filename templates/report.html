@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Performance Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+        .header h1 {
+            color: #333;
+            margin: 0;
+        }
+        .header p {
+            color: #666;
+            margin: 10px 0 0;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .metric-card {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .metric-card h3 {
+            color: #666;
+            margin: 0 0 10px;
+            font-size: 1.1em;
+        }
+        .metric-card .value {
+            color: #333;
+            font-size: 1.8em;
+            font-weight: bold;
+        }
+        .metric-card .positive {
+            color: #28a745;
+        }
+        .metric-card .negative {
+            color: #dc3545;
+        }
+        .plots {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .plot-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .plot-container img {
+            width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        .plot-container h3 {
+            color: #333;
+            margin: 0 0 15px;
+            text-align: center;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            color: #666;
+        }
+        @media (max-width: 768px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+            .plots {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Trading Performance Report</h1>
+            <p>Generated on {{ generation_time }}</p>
+            <p>Period: {{ start_date }} to {{ end_date }}</p>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <h3>Total Trades</h3>
+                <div class="value">{{ total_trades }}</div>
+            </div>
+            <div class="metric-card">
+                <h3>Win Rate</h3>
+                <div class="value {% if win_rate|float > 0.5 %}positive{% else %}negative{% endif %}">
+                    {{ win_rate }}
+                </div>
+            </div>
+            <div class="metric-card">
+                <h3>Profit Factor</h3>
+                <div class="value {% if profit_factor|float > 1.0 %}positive{% else %}negative{% endif %}">
+                    {{ profit_factor }}
+                </div>
+            </div>
+            <div class="metric-card">
+                <h3>Sharpe Ratio</h3>
+                <div class="value {% if sharpe_ratio|float > 1.0 %}positive{% else %}negative{% endif %}">
+                    {{ sharpe_ratio }}
+                </div>
+            </div>
+            <div class="metric-card">
+                <h3>Max Drawdown</h3>
+                <div class="value negative">{{ max_drawdown }}</div>
+            </div>
+            <div class="metric-card">
+                <h3>Total Return</h3>
+                <div class="value {% if total_return|float > 0 %}positive{% else %}negative{% endif %}">
+                    {{ total_return }}
+                </div>
+            </div>
+            <div class="metric-card">
+                <h3>Annual Return</h3>
+                <div class="value {% if annual_return|float > 0 %}positive{% else %}negative{% endif %}">
+                    {{ annual_return }}
+                </div>
+            </div>
+        </div>
+
+        <div class="plots">
+            <div class="plot-container">
+                <h3>Equity Curve</h3>
+                <img src="equity_curve.png" alt="Equity Curve">
+            </div>
+            <div class="plot-container">
+                <h3>Drawdown</h3>
+                <img src="drawdown.png" alt="Drawdown">
+            </div>
+            <div class="plot-container">
+                <h3>Win Rate</h3>
+                <img src="win_rate.png" alt="Win Rate">
+            </div>
+            <div class="plot-container">
+                <h3>Performance Metrics</h3>
+                <img src="metrics.png" alt="Performance Metrics">
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>This report was automatically generated by the trading bot.</p>
+            <p>For more information, please refer to the trading bot documentation.</p>
+        </div>
+    </div>
+</body>
+</html> 
