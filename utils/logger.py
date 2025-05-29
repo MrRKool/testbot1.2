@@ -511,111 +511,126 @@ class RotatingFileHandler(logging.handlers.RotatingFileHandler):
 # --------------------------------------------------------
 
 class Logger:
-    """Class voor het beheren van logging."""
+    """Centralized logging configuration for the trading bot."""
     
     _instance = None
-    _loggers: Dict[str, logging.Logger] = {}
-    _initialized = False
     
     def __new__(cls, *args, **kwargs):
-        """Implementeer singleton pattern."""
         if cls._instance is None:
             cls._instance = super(Logger, cls).__new__(cls)
         return cls._instance
     
-    def __init__(self, name: str, config: LogConfig):
-        """Initialiseer de logger."""
-        if not self._initialized:
+    def __init__(self, name: str = "trading_bot"):
+        if not hasattr(self, 'initialized'):
             self.name = name
-            self.config = config
-            self._setup_directories()
-            self._setup_root_logger()
-            self._initialized = True
-            
-    def _setup_directories(self):
-        """Configureer benodigde directories."""
+            self.log_dir = Path("logs")
+            self.log_dir.mkdir(exist_ok=True)
+            self._setup_logging()
+            self.initialized = True
+    
+    def _setup_logging(self):
+        """Setup comprehensive logging configuration."""
         try:
-            os.makedirs(self.config.log_dir, exist_ok=True)
-            os.makedirs(os.path.join(self.config.log_dir, "json"), exist_ok=True)
-            os.makedirs(os.path.join(self.config.log_dir, "performance"), exist_ok=True)
-        except Exception as e:
-            print(f"Fout bij configureren log directories: {e}")
-            sys.exit(1)
-            
-    def _setup_root_logger(self):
-        """Configureer de root logger."""
-        try:
-            # Verwijder bestaande handlers
-            root_logger = logging.getLogger()
-            for handler in root_logger.handlers[:]:
-                root_logger.removeHandler(handler)
-                
-            # Configureer root logger
-            root_logger.setLevel(self.config.log_level)
-            
-            # File handler
-            if self.config.file_logging:
-                file_handler = RotatingFileHandler(
-                    os.path.join(self.config.log_dir, "trading_bot.log"),
-                    max_bytes=self.config.max_file_size,
-                    backup_count=self.config.backup_count
-                )
-                file_handler.setFormatter(logging.Formatter(
-                    self.config.log_format,
-                    datefmt=self.config.date_format
-                ))
-                root_logger.addHandler(file_handler)
-                
-            # Console handler
-            if self.config.console_logging:
-                console_handler = logging.StreamHandler()
-                console_handler.setFormatter(logging.Formatter(
-                    self.config.console_format,
-                    datefmt=self.config.date_format
-                ))
-                root_logger.addHandler(console_handler)
-                
-        except Exception as e:
-            print(f"Fout bij configureren root logger: {e}")
-            sys.exit(1)
-            
-    def get_logger(self) -> logging.Logger:
-        """Haal een logger op voor de huidige module."""
-        return self._loggers[self.name]
-        
-    def set_level(self, level: int):
-        """Verander het logging level voor de huidige logger."""
-        self.config.log_level = level
-        self.get_logger().setLevel(level)
-        logging.getLogger().setLevel(level)
-        
-    def add_file_handler(self, filename: str):
-        """Voeg een file handler toe voor de huidige logger."""
-        if filename not in self._loggers:
-            file_handler = RotatingFileHandler(
-                os.path.join(self.config.log_dir, filename),
-                max_bytes=self.config.max_file_size,
-                backup_count=self.config.backup_count
+            # Create formatters
+            detailed_formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
             )
-            file_handler.setFormatter(logging.Formatter(
-                self.config.log_format,
-                datefmt=self.config.date_format
-            ))
-            self._loggers[filename] = logging.getLogger(filename)
-            self._loggers[filename].addHandler(file_handler)
+            simple_formatter = logging.Formatter(
+                '%(asctime)s - %(levelname)s - %(message)s'
+            )
             
-    def remove_file_handler(self, filename: str):
-        """Verwijder een file handler van de huidige logger."""
-        if filename in self._loggers:
-            for handler in self._loggers[filename].handlers[:]:
-                if isinstance(handler, RotatingFileHandler) and handler.baseFilename.endswith(filename):
-                    self._loggers[filename].removeHandler(handler)
+            # Setup root logger
+            root_logger = logging.getLogger()
+            root_logger.setLevel(logging.DEBUG)  # Capture all levels
+            
+            # Clear existing handlers
+            root_logger.handlers = []
+            
+            # Console handler (INFO and above)
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(logging.INFO)
+            console_handler.setFormatter(simple_formatter)
+            root_logger.addHandler(console_handler)
+            
+            # File handler for all logs (DEBUG and above)
+            all_logs_handler = logging.handlers.RotatingFileHandler(
+                self.log_dir / "trading_bot.log",
+                maxBytes=10*1024*1024,  # 10MB
+                backupCount=5,
+                encoding='utf-8'
+            )
+            all_logs_handler.setLevel(logging.DEBUG)
+            all_logs_handler.setFormatter(detailed_formatter)
+            root_logger.addHandler(all_logs_handler)
+            
+            # Error log handler (ERROR and above)
+            error_log_handler = logging.handlers.RotatingFileHandler(
+                self.log_dir / "error.log",
+                maxBytes=10*1024*1024,  # 10MB
+                backupCount=5,
+                encoding='utf-8'
+            )
+            error_log_handler.setLevel(logging.ERROR)
+            error_log_handler.setFormatter(detailed_formatter)
+            root_logger.addHandler(error_log_handler)
+            
+            # Performance log handler
+            perf_log_handler = logging.handlers.RotatingFileHandler(
+                self.log_dir / "performance.log",
+                maxBytes=10*1024*1024,  # 10MB
+                backupCount=5,
+                encoding='utf-8'
+            )
+            perf_log_handler.setLevel(logging.INFO)
+            perf_log_handler.setFormatter(detailed_formatter)
+            root_logger.addHandler(perf_log_handler)
+            
+            # Setup exception hook to catch unhandled exceptions
+            sys.excepthook = self._handle_exception
+            
+            logging.info("Logging system initialized successfully")
+            
+        except Exception as e:
+            print(f"Critical error setting up logging: {e}")
+            sys.exit(1)
+    
+    def _handle_exception(self, exc_type, exc_value, exc_traceback):
+        """Handle unhandled exceptions."""
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+            
+        logging.error("Unhandled exception:", exc_info=(exc_type, exc_value, exc_traceback))
+    
+    def get_logger(self, name: Optional[str] = None) -> logging.Logger:
+        """Get a logger instance."""
+        return logging.getLogger(name or self.name)
+    
+    def log_error(self, error: Exception, context: Dict[str, Any] = None):
+        """Log an error with context."""
+        logger = self.get_logger()
+        error_msg = f"Error: {str(error)}\n"
+        if context:
+            error_msg += f"Context: {json.dumps(context, indent=2)}\n"
+        error_msg += f"Traceback:\n{traceback.format_exc()}"
+        logger.error(error_msg)
+    
+    def log_performance(self, metric: str, value: float, context: Dict[str, Any] = None):
+        """Log performance metrics."""
+        logger = self.get_logger("performance")
+        msg = f"Performance - {metric}: {value}"
+        if context:
+            msg += f" - Context: {json.dumps(context)}"
+        logger.info(msg)
+
+# Create global logger instance
+logger = Logger().get_logger()
 
 def main():
     """Test de logger."""
     try:
         # Maak logger instance
-        logger = Logger("test", LogConfig())
+        logger = Logger("test")
         
         # Test verschillende log levels
         test_logger = logger.get_logger()
