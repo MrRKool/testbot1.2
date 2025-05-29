@@ -50,7 +50,7 @@ class BacktestEngine:
         
         # Initialize components
         self.data_loader = DataLoader(config)
-        self.strategy = TradingStrategy(config)
+        self.strategy = TradingStrategy(config)  # Initialize strategy first
         self.risk_manager = RiskManager(config)
         self.mtf_analyzer = MultiTimeframeAnalyzer(config)
         
@@ -77,8 +77,12 @@ class BacktestEngine:
         # Load historical data for each timeframe
         self._load_historical_data()
         
-        # Initialize strategy
-        self.strategy = TradingStrategy(config)
+        # Assign data to strategy
+        self.strategy.data['BTCUSDT'] = {}
+        for timeframe in self.timeframes:
+            self.strategy.data['BTCUSDT'][timeframe] = self.data[timeframe].copy()
+            # Calculate indicators immediately after assigning data
+            self.indicators[timeframe] = self.strategy.calculate_indicators('BTCUSDT', timeframe)
         
     def _load_historical_data(self):
         """Load historical data for all timeframes"""
@@ -95,7 +99,11 @@ class BacktestEngine:
     def _calculate_indicators(self):
         """Calculate indicators for all timeframes"""
         for timeframe in self.timeframes:
-            self.indicators[timeframe] = self.strategy.calculate_indicators(self.data[timeframe])
+            df = self.data[timeframe]
+            self.indicators[timeframe] = self.strategy.calculate_indicators('BTCUSDT', timeframe)
+            # Ensure ATR is available in the indicators DataFrame
+            if 'atr' not in self.indicators[timeframe]:
+                self.indicators[timeframe]['atr'] = df['atr']
     
     def _generate_signals(self):
         """Generate trading signals using multi-timeframe analysis"""
@@ -108,11 +116,17 @@ class BacktestEngine:
         for timeframe in self.timeframes:
             df = self.data[timeframe]
             indicators = self.indicators[timeframe]
-            
+            # Uitgebreide debug info
+            print(f"[DEBUG] data shape voor {timeframe}: {df.shape}")
+            print(f"[DEBUG] data columns voor {timeframe}: {list(df.columns)}")
+            print(f"[DEBUG] data head voor {timeframe}:\n{df.head()}")
+            print(f"[DEBUG] indicators shape voor {timeframe}: {indicators.shape}")
+            print(f"[DEBUG] indicators columns voor {timeframe}: {list(indicators.columns)}")
+            print(f"[DEBUG] indicators head voor {timeframe}:\n{indicators.head()}")
             # Calculate signals using strategy
-            signals = self.strategy.generate_signals(df, indicators)
+            signals = self.strategy.generate_signals(data=df, indicators=indicators)
             self.signals[timeframe]['signal'] = signals
-            
+        
         # Combine signals from different timeframes
         self._combine_timeframe_signals()
     
@@ -132,8 +146,8 @@ class BacktestEngine:
         
         # Combine signals with weights
         for timeframe, weight in weights.items():
-            # Resample signals to 1h timeframe
-            resampled_signals = self.signals[timeframe]['signal'].resample('1H').last()
+            # Resample signals to 1h timeframe using 'h' instead of 'H'
+            resampled_signals = self.signals[timeframe]['signal'].resample('1h').last()
             combined_signals['signal'] += resampled_signals * weight
         
         # Normalize combined signals
@@ -199,8 +213,12 @@ class BacktestEngine:
                   (position > 0 and price >= entry_price * (1 + self.config['trading']['risk']['take_profit'])) or
                   (position < 0 and price <= entry_price * (1 - self.config['trading']['risk']['take_profit']))):
                 
-                # Calculate profit/loss
-                pnl = position * (price - entry_price) / entry_price
+                # Calculate profit/loss with check for zero entry_price
+                if entry_price != 0:
+                    pnl = position * (price - entry_price) / entry_price
+                else:
+                    pnl = 0
+                    
                 capital *= (1 + pnl) * (1 - self.commission_rate)
                 
                 # Record trade
@@ -455,7 +473,8 @@ class BacktestEngine:
     def _calculate_sharpe_ratio(self, returns: pd.Series) -> float:
         """Calculate Sharpe ratio."""
         try:
-            risk_free_rate = get_risk_param(self.config, 'BTCUSDT', 'risk_free_rate') or 0
+            # Use default risk_free_rate of 0.02 (2%) if not specified
+            risk_free_rate = get_risk_param(self.config, 'BTCUSDT', 'risk_free_rate') or 0.02
             excess_returns = returns - risk_free_rate
             return np.sqrt(252) * excess_returns.mean() / excess_returns.std() if excess_returns.std() != 0 else 0
         except Exception as e:
@@ -465,7 +484,8 @@ class BacktestEngine:
     def _calculate_sortino_ratio(self, returns: pd.Series) -> float:
         """Calculate Sortino ratio."""
         try:
-            risk_free_rate = get_risk_param(self.config, 'BTCUSDT', 'risk_free_rate') or 0
+            # Use default risk_free_rate of 0.02 (2%) if not specified
+            risk_free_rate = get_risk_param(self.config, 'BTCUSDT', 'risk_free_rate') or 0.02
             excess_returns = returns - risk_free_rate
             downside_returns = excess_returns[excess_returns < 0]
             return np.sqrt(252) * excess_returns.mean() / downside_returns.std() if downside_returns.std() != 0 else 0
@@ -506,4 +526,47 @@ class BacktestEngine:
                     self._close_position(position, current_price, data)
             self.logger.info("Alle posities zijn gesloten vanwege max drawdown.")
         except Exception as e:
-            self.logger.error(f"Error closing all positions: {str(e)}") 
+            self.logger.error(f"Error closing all positions: {str(e)}")
+
+    def _calculate_metrics(self) -> Dict[str, Any]:
+        """Calculate performance metrics."""
+        try:
+            # Calculate returns with explicit fill_method=None
+            returns = pd.Series([t['pnl'] for t in self.trades]).pct_change(fill_method=None).dropna()
+            
+            # Calculate metrics
+            total_trades = len(self.trades)
+            winning_trades = len([t for t in self.trades if t['pnl'] > 0])
+            losing_trades = len([t for t in self.trades if t['pnl'] <= 0])
+            
+            win_rate = winning_trades / total_trades if total_trades > 0 else 0
+            
+            avg_win = np.mean([t['pnl'] for t in self.trades if t['pnl'] > 0]) if winning_trades > 0 else 0
+            avg_loss = np.mean([t['pnl'] for t in self.trades if t['pnl'] <= 0]) if losing_trades > 0 else 0
+            
+            profit_factor = abs(avg_win / avg_loss) if avg_loss != 0 else 0
+            
+            total_return = (self.current_capital - self.initial_capital) / self.initial_capital
+            
+            max_drawdown = self._calculate_max_drawdown()
+            
+            sharpe_ratio = self._calculate_sharpe_ratio(returns)
+            sortino_ratio = self._calculate_sortino_ratio(returns)
+            
+            return {
+                'total_trades': total_trades,
+                'winning_trades': winning_trades,
+                'losing_trades': losing_trades,
+                'win_rate': win_rate,
+                'avg_win': avg_win,
+                'avg_loss': avg_loss,
+                'profit_factor': profit_factor,
+                'total_return': total_return,
+                'max_drawdown': max_drawdown,
+                'sharpe_ratio': sharpe_ratio,
+                'sortino_ratio': sortino_ratio
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating performance: {str(e)}")
+            return {} 

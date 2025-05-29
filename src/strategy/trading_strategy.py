@@ -57,8 +57,8 @@ class TradingStrategy:
             if (symbol, timeframe) in self._indicator_cache:
                 del self._indicator_cache[(symbol, timeframe)]
 
-    @lru_cache(maxsize=100)
     def calculate_indicators(self, symbol: str, timeframe: str) -> pd.DataFrame:
+        """Calculate indicators for a specific symbol and timeframe"""
         cache_key = (symbol, timeframe)
         if cache_key in self._indicator_cache:
             return self._indicator_cache[cache_key]
@@ -890,21 +890,27 @@ class TradingStrategy:
         except Exception as e:
             self.logger.error(f"Error loading state: {str(e)}") 
 
-    def generate_signals(self, data: pd.DataFrame) -> pd.Series:
+    def generate_signals(self, data: pd.DataFrame, indicators: pd.DataFrame) -> pd.Series:
         """
         Genereer trading signalen op basis van de berekende indicatoren.
         """
         signals = pd.Series(0, index=data.index)
-        indicators = self.calculate_indicators(data)
         
         # Bereken dagelijkse winst en risico
         daily_profit = self._check_daily_targets(data, indicators)
         
+        # Fallback configuratie als daily_targets niet bestaat
+        daily_targets = self.config.get('daily_targets', {
+            'min_profit': -0.1,  # -10% minimum winst
+            'max_profit': 0.1,   # +10% maximum winst
+            'max_risk': 0.05     # 5% maximum risico
+        })
+        
         # Alleen signalen genereren als de dagelijkse doelen niet overschreden zijn
-        if daily_profit is not None and self.config['daily_targets']['min_profit'] <= daily_profit <= self.config['daily_targets']['max_profit']:
+        if daily_profit is not None and daily_targets['min_profit'] <= daily_profit <= daily_targets['max_profit']:
             # RSI signalen
-            rsi_buy = (indicators['rsi'] < self.config['strategy']['rsi']['oversold'])
-            rsi_sell = (indicators['rsi'] > self.config['strategy']['rsi']['overbought'])
+            rsi_buy = (indicators['rsi'] < self.config['strategy']['indicators']['rsi']['oversold'])
+            rsi_sell = (indicators['rsi'] > self.config['strategy']['indicators']['rsi']['overbought'])
             
             # MACD signalen
             macd_buy = (indicators['macd'] > indicators['macd_signal']) & (indicators['macd_hist'] > 0)
@@ -923,11 +929,11 @@ class TradingStrategy:
             volume_sell = (data['volume'] < indicators['volume_ma'])
             
             # ADX trend sterkte
-            strong_trend = (indicators['adx'] > self.config['strategy']['adx']['threshold'])
+            strong_trend = (indicators['adx'] > self.config['strategy']['indicators']['adx']['threshold'])
             
             # Stochastic RSI signalen
-            stoch_buy = (indicators['stoch_rsi_k'] < self.config['strategy']['stoch_rsi']['oversold'])
-            stoch_sell = (indicators['stoch_rsi_k'] > self.config['strategy']['stoch_rsi']['overbought'])
+            stoch_buy = (indicators['stoch_rsi_k'] < self.config['strategy']['indicators']['stochastic_rsi']['oversold'])
+            stoch_sell = (indicators['stoch_rsi_k'] > self.config['strategy']['indicators']['stochastic_rsi']['overbought'])
             
             # Combineer signalen met gewichten
             buy_signals = (
@@ -954,19 +960,34 @@ class TradingStrategy:
         
         return signals
     
-    def _check_daily_targets(self, data: pd.DataFrame, indicators: Dict[str, pd.Series]) -> Optional[float]:
+    def _check_daily_targets(self, data: pd.DataFrame, indicators: pd.DataFrame) -> Optional[float]:
         """
         Controleer of de dagelijkse winst binnen de grenzen ligt en of het risico niet te hoog is.
         """
-        # Bereken dagelijkse winst
-        daily_returns = data['close'].pct_change()
-        daily_profit = daily_returns.sum()
-        
-        # Bereken risico (bijvoorbeeld via ATR)
-        risk = indicators['atr'].iloc[-1] / data['close'].iloc[-1]
-        
-        # Controleer of het risico binnen de grenzen ligt
-        if risk > self.config['daily_targets']['max_risk']:
-            return None
-        
-        return daily_profit 
+        try:
+            # Bereken dagelijkse winst
+            daily_returns = data['close'].pct_change()
+            daily_profit = daily_returns.sum()
+            
+            # Bereken risico (bijvoorbeeld via ATR)
+            if 'atr' not in indicators.columns:
+                self.logger.error("ATR not found in indicators DataFrame")
+                return None
+                
+            risk = indicators['atr'].iloc[-1] / data['close'].iloc[-1]
+            
+            # Fallback configuratie als daily_targets niet bestaat
+            daily_targets = self.config.get('daily_targets', {
+                'min_profit': -0.1,  # -10% minimum winst
+                'max_profit': 0.1,   # +10% maximum winst
+                'max_risk': 0.05     # 5% maximum risico
+            })
+            
+            # Controleer of het risico binnen de grenzen ligt
+            if risk > daily_targets['max_risk']:
+                return None
+            
+            return daily_profit
+        except Exception as e:
+            self.logger.error(f"Error checking daily targets: {str(e)}")
+            return None 

@@ -35,9 +35,10 @@ import argparse
 import gc
 from functools import lru_cache
 from contextlib import contextmanager
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, event
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.pool import QueuePool
+import threading
 
 # Eigen modules
 from utils.logger import Logger, LogConfig, setup_logging
@@ -63,7 +64,10 @@ class TradingBot:
         self.log = logging.getLogger(__name__)
         
         # Load config
-        self.config = self._load_config(config_path)
+        self.config = load_config(config_path)
+        
+        # Zet database pad
+        self.db_path = self.config.get("database", {}).get("url", "trading_bot.db").replace("sqlite:///", "")
         
         # Initialize database with connection pooling
         self._init_database()
@@ -151,8 +155,7 @@ class TradingBot:
                         average_loss REAL,
                         total_profit REAL,
                         total_loss REAL,
-                        metadata TEXT,
-                        INDEX idx_perf_timestamp (timestamp)
+                        metadata TEXT
                     )
                 """))
                 
@@ -168,9 +171,7 @@ class TradingBot:
                         quantity REAL,
                         pnl REAL,
                         status TEXT,
-                        metadata TEXT,
-                        INDEX idx_trades_symbol_timestamp (symbol, timestamp),
-                        INDEX idx_trades_status (status)
+                        metadata TEXT
                     )
                 """))
                 
@@ -187,10 +188,15 @@ class TradingBot:
                         close REAL,
                         volume REAL,
                         metadata TEXT,
-                        UNIQUE(symbol, timeframe, timestamp),
-                        INDEX idx_market_symbol_timeframe_timestamp (symbol, timeframe, timestamp)
+                        UNIQUE(symbol, timeframe, timestamp)
                     )
                 """))
+                
+                # Create indexes
+                session.execute(text("CREATE INDEX IF NOT EXISTS idx_perf_timestamp ON performance_metrics (timestamp)"))
+                session.execute(text("CREATE INDEX IF NOT EXISTS idx_trades_symbol_timestamp ON trades (symbol, timestamp)"))
+                session.execute(text("CREATE INDEX IF NOT EXISTS idx_trades_status ON trades (status)"))
+                session.execute(text("CREATE INDEX IF NOT EXISTS idx_market_symbol_timeframe_timestamp ON market_data (symbol, timeframe, timestamp)"))
                 
         except Exception as e:
             self.log.error(f"Error creating tables: {str(e)}")

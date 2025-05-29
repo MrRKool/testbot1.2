@@ -1,6 +1,6 @@
-# AI Trading Bot
+om# AI Trading Bot
 
-Een geavanceerde AI trading bot met state-of-the-art machine learning en deep learning capabilities.
+Een geavanceerde AI trading bot met state-of-the-art machine learning, deep learning, portfolio optimalisatie, backtesting en real-time monitoring capabilities.
 
 ## Features
 
@@ -30,33 +30,53 @@ Een geavanceerde AI trading bot met state-of-the-art machine learning en deep le
   - Transformer modellen voor sequentiële data
   - Transfer learning met pre-trained modellen
 
-### Performance & Security
+### Portfolio Management
+- Modern Portfolio Theory (MPT)
+- Risk Parity optimalisatie
+- Covariance shrinkage
+- Portfolio constraints
+- Real-time rebalancing
 
-- **Performance Monitoring**
-  - Real-time systeem monitoring
-  - Functie performance tracking
-  - Resource gebruik optimalisatie
-  - Automatische cleanup
+### Backtesting
+- Uitgebreid backtesting framework
+- Performance metrics
+- Risk analysis
+- Parallel processing
+- Numba optimalisatie
 
-- **Security Management**
-  - Password hashing
-  - JWT token authenticatie
-  - Data encryptie
-  - Login attempt tracking
+### Real-time Analytics
+- Performance monitoring
+- Risk metrics
+- Market analysis
+- Resource monitoring
+- Distributed tracing
+
+### Data Quality
+- Data validatie
+- Outlier detectie
+- Missing value handling
+- Data cleaning
+- Quality control
+
+### Security
+- 2FA authenticatie
+- IP whitelisting
+- Rate limiting
+- API security
+- Data encryption
+- Password hashing
+- JWT token authenticatie
+- Login attempt tracking
 
 ### Event & Error Management
-
-- **Event Management**
-  - Asynchrone event handling
-  - Event filtering en routing
-  - Event persistence
-  - Event statistieken
-
-- **Error Management**
-  - Geavanceerde error tracking
-  - Error categorisatie
-  - Automatische error recovery
-  - Error rapportage
+- Asynchrone event handling
+- Event filtering en routing
+- Event persistence
+- Event statistieken
+- Geavanceerde error tracking
+- Error categorisatie
+- Automatische error recovery
+- Error rapportage
 
 ## Installatie
 
@@ -75,7 +95,11 @@ venv\Scripts\activate     # Windows
 
 3. Installeer dependencies:
 ```bash
+# Voor productie gebruik
 pip install -r requirements.txt
+
+# Voor development
+pip install -r requirements-dev.txt
 ```
 
 4. Configureer de environment variables:
@@ -122,40 +146,32 @@ predictions = pipeline.predict('model_name', X_test)
 metrics = pipeline.evaluate_model('model_name', X_test, y_test)
 ```
 
-### Online Learning
+### Portfolio Optimalisatie
 
 ```python
-from src.ai.models.online_learning import OnlineLearning
+from src.portfolio.optimizer import PortfolioOptimizer
 
-# Initialiseer online learning
-online = OnlineLearning(config)
+# Initialiseer portfolio optimizer
+optimizer = PortfolioOptimizer(config)
 
-# Initialiseer model
-online.initialize_model('model_name', input_dim=10)
-
-# Update model met nieuwe data
-online.update_model('model_name', X_new, y_new)
-
-# Maak voorspellingen
-predictions = online.predict('model_name', X)
+# Optimaliseer portfolio
+weights = optimizer.optimize_portfolio(returns)
 ```
 
-### Deep Learning
+### Backtesting
 
 ```python
-from src.ai.models.deep_learning import DeepLearning
+from src.backtest.backtest_engine import BacktestEngine
 
-# Initialiseer deep learning
-dl = DeepLearning(config)
+# Initialiseer backtest engine
+engine = BacktestEngine(config)
 
-# Maak CNN model
-dl.create_cnn_model('cnn_model', input_shape=(32, 32, 3), num_classes=10)
-
-# Maak RNN model
-dl.create_rnn_model('rnn_model', input_shape=(100, 10), num_classes=2)
-
-# Train model
-dl.train_model('model_name', X_train, y_train)
+# Run backtest
+results = engine.run_backtest(
+    data=data,
+    entry_rules=entry_rules,
+    exit_rules=exit_rules
+)
 ```
 
 ## Configuratie
@@ -185,16 +201,77 @@ ai:
     cnn_blocks: 3
     rnn_layers: 2
     transformer_heads: 8
+
+portfolio:
+  risk_parity: false
+  shrinkage_factor: 0.5
+  min_weight: 0.01
+  max_weight: 0.5
+
+backtesting:
+  parallel_processing: true
+  num_workers: 4
+  use_numba: true
+
+monitoring:
+  async_monitoring: true
+  metrics_aggregation: true
+  alert_thresholds:
+    max_drawdown: 0.1
+    min_sharpe: 1.0
+    max_position_size: 0.2
+  health_check_interval: 300
+
+security:
+  require_2fa: true
+  ip_whitelist: ['127.0.0.1']
+  rate_limit: 100
+  connection_pool_size: 10
 ```
 
-## Monitoring
+## Performance Monitoring
 
-De bot biedt uitgebreide monitoring mogelijkheden:
+### Metrics
+- Total trades
+- Winning trades
+- Losing trades
+- Total P&L
+- Win rate
+- Average win
+- Average loss
+- Maximum drawdown
+- Sharpe ratio
+- Sortino ratio
 
-- Real-time performance metrics
-- Model evaluatie statistieken
-- Resource gebruik tracking
-- Error en event logging
+### Alerts
+- High drawdown
+- Low Sharpe ratio
+- Large position size
+- Resource usage
+- Data quality issues
+
+### Health Checks
+- API connectivity
+- Database connectivity
+- Model performance
+- Resource usage
+- Cache status
+
+## Data Quality
+
+### Validatie
+- Missing values
+- Outliers
+- Data consistency
+- Time gaps
+- Volume consistency
+
+### Cleaning
+- Fill missing values
+- Remove outliers
+- Fix time gaps
+- Normalize data
+- Handle duplicates
 
 ## Contributing
 

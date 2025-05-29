@@ -1,5 +1,11 @@
 # Trading Bot Configuration
 
+# API Configuration
+api:
+  api_key: ${BYBIT_API_KEY}
+  api_secret: ${BYBIT_API_SECRET}
+  base_url: ${EXCHANGE_BASE_URL}
+
 # OpenAI Configuration
 openai:
   api_key: ${OPENAI_API_KEY}
@@ -41,7 +47,7 @@ backtest:
     - 5m
     - 1h
     - 4h
-  data_dir: "data/historical"
+  data_dir: "data/BTCUSDT"
 
 # Trading Parameters
 trading:
