@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 import logging
 from typing import Dict, Optional, Any
-from utils.trading.enums import SignalType
-from utils.trading.indicators import (
+from .enums import SignalType
+from .indicators import (
     calculate_rsi,
     calculate_macd,
     calculate_bollinger_bands,
@@ -20,7 +20,7 @@ from utils.trading.indicators import (
     calculate_williams_r,
     calculate_schaff_trend_cycle
 )
-from utils.trading.rl_agent import RLAgent, TradingEnvironment
+from .rl_agent import RLAgent, TradingEnvironment
 import torch
 
 class Strategy:
@@ -201,10 +201,10 @@ class Strategy:
             signal['indicators']['MACD'] = macd
             if macd > 0:
                 signal['action'] = 'BUY'
-                signal['confidence'] += 0.15
+                signal['confidence'] += 0.2
             elif macd < 0:
                 signal['action'] = 'SELL'
-                signal['confidence'] += 0.15
+                signal['confidence'] += 0.2
                 
         # Bollinger Bands Analysis
         if all(x in self.data.columns for x in ['BB_upper', 'BB_lower']):
@@ -324,6 +324,23 @@ class Strategy:
             signal['action'] = 'HOLD'
             
         return signal
+
+    def generate_signals(self) -> pd.DataFrame:
+        """Generate trading signals for all data points."""
+        if self.data.empty:
+            return pd.DataFrame()
+            
+        signals = []
+        for i in range(len(self.data)):
+            signal = self.generate_signal()
+            signals.append({
+                'timestamp': self.data.index[i],
+                'action': signal['action'],
+                'confidence': signal['confidence'],
+                'indicators': signal['indicators']
+            })
+            
+        return pd.DataFrame(signals)
 
     def train(self, episodes: int = 1000, batch_size: int = 32):
         """Train the RL agent on historical data."""
