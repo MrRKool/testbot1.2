@@ -332,15 +332,42 @@ class Strategy:
             
         signals = []
         for i in range(len(self.data)):
-            signal = self.generate_signal()
-            signals.append({
+            # Get current position and balance (you might want to get these from somewhere)
+            current_position = 0
+            current_balance = 0
+            
+            # Generate signal for this data point
+            signal = self.generate_signal(current_position, current_balance)
+            
+            # Create a dictionary with the signal data
+            signal_dict = {
                 'timestamp': self.data.index[i],
                 'action': signal['action'],
-                'confidence': signal['confidence'],
-                'indicators': signal['indicators']
-            })
+                'confidence': signal['confidence']
+            }
             
-        return pd.DataFrame(signals)
+            # Add indicator values
+            for indicator, value in signal['indicators'].items():
+                if isinstance(value, dict):
+                    for sub_key, sub_value in value.items():
+                        signal_dict[f'{indicator}_{sub_key}'] = sub_value
+                else:
+                    signal_dict[indicator] = value
+            
+            signals.append(signal_dict)
+            
+        # Convert to DataFrame and ensure all columns are present
+        df = pd.DataFrame(signals)
+        if not df.empty:
+            # Ensure all indicator columns are present
+            for indicator in self.indicator_configs.keys():
+                if indicator not in df.columns:
+                    df[indicator] = None
+                    
+            # Set timestamp as index
+            df.set_index('timestamp', inplace=True)
+            
+        return df
 
     def train(self, episodes: int = 1000, batch_size: int = 32):
         """Train the RL agent on historical data."""
