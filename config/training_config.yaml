@@ -1,0 +1,50 @@
+# Training Configuration
+
+# Historical Data Parameters
+historical_data:
+  timeframes:
+    - 1m
+    - 1h
+    - 4h
+    - 1d
+  lookback_days: 1825  # 5 years of historical data
+  symbols:
+    - BTC/USDT
+
+# Strategy Optimization Parameters
+optimization:
+  n_trials: 100
+  initial_balance: 10000.0
+  metrics:
+    - sharpe_ratio
+    - max_drawdown
+    - total_trades
+    - final_balance
+
+# Technical Indicators
+indicators:
+  sma:
+    - 20
+    - 50
+    - 200
+  rsi:
+    period: 14
+  atr:
+    period: 14
+
+# Risk Management
+risk_management:
+  max_position_size: 0.5  # Maximum position size as fraction of balance
+  max_positions: 5        # Maximum number of concurrent positions
+  stop_loss_range:
+    min: 0.01
+    max: 0.05
+  take_profit_range:
+    min: 0.02
+    max: 0.1
+
+# Training Schedule
+schedule:
+  retrain_interval_days: 7
+  validation_split: 0.2
+  test_split: 0.1 

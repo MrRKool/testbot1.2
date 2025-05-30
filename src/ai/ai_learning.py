@@ -37,7 +37,6 @@ import random
 import itertools
 from collections import Counter
 import time
-from bot.analysis.market_regime import MarketRegimeDetector
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

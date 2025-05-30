@@ -22,12 +22,9 @@ from concurrent.futures import ThreadPoolExecutor
 import multiprocessing
 
 # Eigen modules
-from utils.telegram_alerts import TelegramAlert, AlertType, TelegramConfig
-from utils.trading.price_fetcher import PriceFetcher, PriceFetcherConfig
-from utils.logger import Logger, LogConfig, setup_directories
-from utils.env_loader import check_environment, get_api_keys, get_telegram_config
-from utils.trading.strategy import Strategy
-from utils.trading.enums import OrderType, OrderStatus, SignalType
+from .price_fetcher import PriceFetcher, PriceFetcherConfig
+from .strategy import Strategy
+from .enums import OrderType, OrderStatus, SignalType
 
 # --------------------------------------------------------
 # Deel 1: Constants en Configuratie
@@ -123,15 +120,11 @@ class TradeExecutor:
         """Initialiseer de trade executor."""
         try:
             self.config = config or TradeConfig()
-            self.logger = Logger().get_logger(__name__)
+            self.logger = logging.getLogger(__name__)
             
             # Gebruik bestaande instances of maak nieuwe
             self.strategy = strategy
             self.price_fetcher = price_fetcher
-            
-            # Initialiseer Telegram met configuratie
-            telegram_config = get_telegram_config()
-            self.telegram = TelegramAlert(telegram_config)
             
             self._setup_directories()
             self.active_trades: Dict[str, Trade] = {}

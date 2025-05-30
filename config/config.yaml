@@ -17,12 +17,12 @@ openai:
 
 # Exchange Configuration
 exchange:
-  name: ${EXCHANGE_NAME}
-  testnet: ${EXCHANGE_TESTNET}
+  name: bybit
+  testnet: true
   api:
     key: ${BYBIT_API_KEY}
     secret: ${BYBIT_API_SECRET}
-    base_url: ${EXCHANGE_BASE_URL}
+    base_url: https://api-testnet.bybit.com
     endpoints:
       tickers: "/market/tickers"
       candles: "/market/kline"

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-VPS="your_vps_username@your_vps_ip"
+VPS="root@147.93.59.80"
 REMOTE_DIR="/root/trading-bot"
 LOCAL_DIR="."
 

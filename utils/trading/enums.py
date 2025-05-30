@@ -1,5 +1,22 @@
-from utils.shared.enums import TimeFrame, SignalType
 from enum import Enum
+
+class TimeFrame(str, Enum):
+    """Tijdsframe voor candlestick data."""
+    MINUTE_1 = "1m"
+    MINUTE_5 = "5m"
+    MINUTE_15 = "15m"
+    MINUTE_30 = "30m"
+    HOUR_1 = "1h"
+    HOUR_4 = "4h"
+    DAY_1 = "1d"
+    WEEK_1 = "1w"
+    MONTH_1 = "1M"
+
+class SignalType(str, Enum):
+    """Type van een trading signaal."""
+    BUY = "BUY"
+    SELL = "SELL"
+    HOLD = "HOLD"
 
 class OrderType(str, Enum):
     """Type van een order."""
@@ -19,7 +36,4 @@ class OrderStatus(str, Enum):
     FILLED = "FILLED"
     CANCELED = "CANCELED"
     REJECTED = "REJECTED"
-    EXPIRED = "EXPIRED"
-
-# Verwijder de lokale definities van TimeFrame en SignalType 
-# De rest van het bestand blijft ongewijzigd 
+    EXPIRED = "EXPIRED" 

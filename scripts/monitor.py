@@ -127,7 +127,7 @@ class TradingMonitor:
         try:
             # Check exchange API
             response = requests.get(
-                f"{self.config['exchange']['api_url']}/ping",
+                f"{self.config['exchange']['api']['base_url']}/ping",
                 timeout=5,
             )
             if response.status_code != 200:

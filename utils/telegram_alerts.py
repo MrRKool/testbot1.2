@@ -23,7 +23,7 @@ import asyncio
 import aiohttp
 from concurrent.futures import ThreadPoolExecutor
 import threading
-from telegram.ext import Updater, CommandHandler, MessageHandler, Application
+from telegram.ext import Updater, CommandHandler, MessageHandler
 
 # Eigen modules
 from utils.logger import Logger, LogConfig

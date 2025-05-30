@@ -107,20 +107,18 @@ class PriceFetcher:
         """Initialiseer de PriceFetcher met configuratie."""
         try:
             self.config = config
-            exchange_config = config.get('exchange', {})
-            self.base_url = exchange_config.get('base_url', "https://api.bybit.com")
-            self.api_key = exchange_config.get('api', {}).get('api_key')
-            self.api_secret = exchange_config.get('api', {}).get('api_secret')
+            self.base_url = config.base_url
+            self.api_key = os.getenv('BYBIT_API_KEY')
+            self.api_secret = os.getenv('BYBIT_API_SECRET')
             
             # Setup logger
             self.logger = logging.getLogger(__name__)
             
             # Rate limiter configuratie
-            rate_limit = exchange_config.get('api', {}).get('rate_limit', {})
             self.rate_limiter = RateLimiter(
-                calls_per_second=rate_limit.get('calls_per_second', 1),
-                calls_per_minute=rate_limit.get('calls_per_minute', 30),
-                calls_per_hour=rate_limit.get('calls_per_hour', 500)
+                calls_per_second=config.calls_per_second,
+                calls_per_minute=config.calls_per_minute,
+                calls_per_hour=config.calls_per_hour
             )
             
             # Cache setup
@@ -129,14 +127,14 @@ class PriceFetcher:
             # Connection pool
             self.session = requests.Session()
             adapter = requests.adapters.HTTPAdapter(
-                pool_connections=config.get('connection_pool_size', 10),
-                pool_maxsize=config.get('connection_pool_size', 10),
-                max_retries=3
+                pool_connections=config.connection_pool_size,
+                pool_maxsize=config.connection_pool_size,
+                max_retries=config.max_retries
             )
             self.session.mount('https://', adapter)
             
             # Thread pool
-            self.executor = ThreadPoolExecutor(max_workers=config.get('max_workers', 4))
+            self.executor = ThreadPoolExecutor(max_workers=config.max_workers)
             
             # Async session
             self.async_session = None
@@ -151,19 +149,19 @@ class PriceFetcher:
     def _setup_cache(self):
         """Setup cache met disk persistence."""
         try:
-            cache_dir = Path(self.config.get('cache_dir', 'cache'))
+            cache_dir = Path(getattr(self.config, 'cache_dir', 'cache'))
             cache_dir.mkdir(exist_ok=True)
             
             # Memory cache voor snelle toegang
             self.memory_cache = TTLCache(
-                maxsize=self.config.get('cache_size', 1000),
-                ttl=self.config.get('cache_ttl', 60)
+                maxsize=getattr(self.config, 'cache_size', 1000),
+                ttl=getattr(self.config, 'cache_ttl', 60)
             )
             
             # Disk cache voor persistentie
             self.disk_cache = diskcache.Cache(
                 directory=str(cache_dir),
-                size_limit=self.config.get('cache_size', 1000) * 1024 * 1024  # 1MB per item
+                size_limit=getattr(self.config, 'cache_size', 1000) * 1024 * 1024  # 1MB per item
             )
             
             self.logger.info("Cache systemen geïnitialiseerd")
@@ -279,7 +277,7 @@ class PriceFetcher:
 
     def get_price(self, symbol: str) -> float:
         """Haal de huidige prijs op voor een symbool met caching."""
-        if self.config.get('use_async', True):
+        if getattr(self.config, 'use_async', True):
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
@@ -315,7 +313,7 @@ class PriceFetcher:
             response = self.session.get(
                 f"{self.base_url}{endpoint}",
                 params=params,
-                timeout=self.config.get('timeout', 10)
+                timeout=getattr(self.config, 'timeout', 10)
             )
             response.raise_for_status()
             
@@ -396,7 +394,7 @@ class PriceFetcher:
 
     def get_klines(self, symbol: str, interval: str, limit: int = 1000) -> Optional[pd.DataFrame]:
         """Haal klines (candlestick data) op voor een symbol."""
-        if self.config.get('use_async', True):
+        if getattr(self.config, 'use_async', True):
             try:
                 loop = asyncio.get_event_loop()
                 if loop.is_running():
@@ -445,7 +443,7 @@ class PriceFetcher:
             response = self.session.get(
                 f"{self.base_url}{endpoint}",
                 params=params,
-                timeout=self.config.get('timeout', 10)
+                timeout=getattr(self.config, 'timeout', 10)
             )
             response.raise_for_status()
             

@@ -81,27 +81,9 @@ def calculate_obv(data: pd.DataFrame, smoothing: int = 5) -> pd.Series:
         raise Exception(f"Error calculating OBV: {str(e)}")
 
 def calculate_klinger_oscillator(data: pd.DataFrame, short_period: int = 34, long_period: int = 55) -> pd.Series:
-    """Calculate Klinger Volume Oscillator (KVO).
-    Combines price and volume to detect trend reversals.
-    Usage: Buy/sell on signal line crossovers."""
+    """Calculate Klinger Oscillator."""
     try:
-        # Calculate trend direction
-        trend = np.where(data['close'] > data['close'].shift(1), 1, -1)
-        
-        # Calculate volume force
-        volume_force = data['volume'] * trend
-        
-        # Calculate short and long EMAs of volume force
-        short_ema = volume_force.ewm(span=short_period, adjust=False).mean()
-        long_ema = volume_force.ewm(span=long_period, adjust=False).mean()
-        
-        # Calculate KVO
-        kvo = short_ema - long_ema
-        
-        # Calculate signal line (EMA of KVO)
-        signal = kvo.ewm(span=13, adjust=False).mean()
-        
-        return kvo, signal
+        return data.ta.kvo(short=short_period, long=long_period)
     except Exception as e:
         raise Exception(f"Error calculating Klinger Oscillator: {str(e)}")
 
@@ -126,18 +108,11 @@ def calculate_chaikin_money_flow(data: pd.DataFrame, period: int = 20) -> pd.Ser
 
 def calculate_donchian_channels(data: pd.DataFrame, period: int = 20) -> tuple:
     """Calculate Donchian Channels.
-    Shows highest high / lowest low over X periods.
-    Usage: Buy on breakout above channel."""
+    Identifies highest high and lowest low over a period.
+    Usage: Breakout above upper channel = bullish, below lower channel = bearish."""
     try:
-        upper = data['high'].rolling(window=period).max()
-        lower = data['low'].rolling(window=period).min()
-        middle = (upper + lower) / 2
-        
-        return (
-            pd.Series(upper, index=data.index),
-            pd.Series(middle, index=data.index),
-            pd.Series(lower, index=data.index)
-        )
+        dc = data.ta.donchian(length=period)
+        return dc[f'DCB_{period}'], dc[f'DCM_{period}'], dc[f'DCT_{period}']
     except Exception as e:
         raise Exception(f"Error calculating Donchian Channels: {str(e)}")
 
@@ -161,20 +136,9 @@ def calculate_williams_r(data: pd.DataFrame, period: int = 14) -> pd.Series:
 
 def calculate_schaff_trend_cycle(data: pd.DataFrame, fast_period: int = 23, slow_period: int = 50) -> pd.Series:
     """Calculate Schaff Trend Cycle (STC).
-    Fast trend detector, better than MACD.
-    Usage: Buy above 25, sell below 75."""
+    Combines elements of MACD and stochastics.
+    Usage: > 75 = bullish, < 25 = bearish."""
     try:
-        # Calculate MACD
-        macd, signal, _ = calculate_macd(data, fast_period, slow_period)
-        
-        # Calculate first stochastic
-        stoch1 = 100 * (macd - macd.rolling(window=slow_period).min()) / \
-                 (macd.rolling(window=slow_period).max() - macd.rolling(window=slow_period).min())
-        
-        # Calculate second stochastic
-        stoch2 = 100 * (stoch1 - stoch1.rolling(window=slow_period).min()) / \
-                 (stoch1.rolling(window=slow_period).max() - stoch1.rolling(window=slow_period).min())
-        
-        return pd.Series(stoch2, index=data.index)
+        return data.ta.stc(fast=fast_period, slow=slow_period)
     except Exception as e:
         raise Exception(f"Error calculating Schaff Trend Cycle: {str(e)}") 
